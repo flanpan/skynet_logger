@@ -9,8 +9,8 @@ local function get_service(category)
     local addr = category_addr[category]
     if addr then return addr end
 
-    local default_service = log_define.service_name()
-    local addr = skynet.call(default_service, "lua", "get_service", category)
+    local root_addr = skynet.uniqueservice("logger")
+    local addr = skynet.call(root_addr, "lua", "get_service", category)
     category_addr[category] = addr
     return addr
 end
