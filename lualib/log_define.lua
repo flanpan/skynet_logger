@@ -39,7 +39,7 @@ M.DEFAULT_CATEGORY = "root"
 --- local service name
 function M.service_name(category)
     if not category or category == M.DEFAULT_CATEGORY then
-        return ".logger." .. M.DEFAULT_CATEGORY
+        return ".logger"
     end
     return ".logger." .. category
 end

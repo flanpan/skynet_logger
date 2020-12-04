@@ -1,8 +1,13 @@
 local skynet = require "skynet"
 local log_define = require "log_define"
+local queue = require "skynet.queue"
 require "skynet.manager"
 
 local LOG_LEVEL = log_define.LOG_LEVEL
+local DEFAULT_CATEGORY = log_define.DEFAULT_CATEGORY
+local log_format = log_define.format
+local color = log_define.color
+local log_service_name = log_define.service_name
 local string_match = string.match
 
 local log_root = skynet.getenv("log_root")
@@ -14,6 +19,7 @@ local last_day	= -1
 local category = ...
 local is_master = not category
 local category_addr = {}
+local lock = queue()
 local file
 
 
@@ -50,7 +56,7 @@ end
 local CMD = {}
 
 function CMD.console(level, msg)
-    print(log_define.color(level, msg))
+    print(color(level, msg))
 end
 
 function CMD.log(level, msg)
@@ -71,7 +77,7 @@ function CMD.log(level, msg)
         if is_master then
             CMD.console(level, msg)
         else
-            skynet.call(log_define.service_name(), "lua", "console", level, msg)
+            skynet.call(log_service_name(), "lua", "console", level, msg)
         end
     end
 end
@@ -95,13 +101,18 @@ function CMD.set_level(level)
 end
 
 function CMD.get_service(category)
-    if not is_master then return end 
-    local name = log_define.service_name(category)
-    local addr = skynet.localname(name)
-    if not addr then
-        addr = skynet.newservice("logger", category)
-        category_addr[category] = addr
+    if not is_master then
+        return
     end
+
+    local addr
+    lock(function()
+        addr = category_addr[category]
+        if not addr then
+            addr = skynet.newservice("logger", category)
+            category_addr[category] = addr
+        end
+    end)
     return addr
 end
 
@@ -125,9 +136,9 @@ if is_master then
                 level = LOG_LEVEL.WARN
             end
             if string_match(msg, "stack traceback:") then
-                level = LOG_LEVEL.WARN
+                level = LOG_LEVEL.ERROR
             end
-            msg = log_define.format(addr, level, nil, msg)
+            msg = log_format(addr, level, nil, msg)
             CMD.log(level, msg)
         end
     }
@@ -138,10 +149,12 @@ if is_master then
         unpack = function(...) return ... end,
         dispatch = function(_, addr)
             local level = LOG_LEVEL.FATAL
-            local msg = log_define.format(addr, level, nil, "SIGHUP")
+            local msg = log_format(addr, level, nil, "SIGHUP")
             CMD.log(level, msg)
         end
     }
+
+    category_addr[DEFAULT_CATEGORY] = skynet.self()
 end
 
 
@@ -152,5 +165,5 @@ skynet.dispatch("lua", function(_, _, cmd, ...)
 end)
 
 open_file()
-skynet.register(log_define.service_name(category))
+skynet.register(log_service_name(category))
 skynet.start(function() end)
