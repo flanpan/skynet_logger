@@ -36,14 +36,6 @@ M.LOG_COLOR = {
 
 M.DEFAULT_CATEGORY = "root"
 
---- local service name
-function M.service_name(category)
-    if not category or category == M.DEFAULT_CATEGORY then
-        return ".logger"
-    end
-    return ".logger." .. category
-end
-
 function M.log_dir(log_root, date)
     return string_format("%s/%04d-%02d-%02d",
         log_root or ".", 

@@ -7,7 +7,6 @@ local LOG_LEVEL = log_define.LOG_LEVEL
 local DEFAULT_CATEGORY = log_define.DEFAULT_CATEGORY
 local log_format = log_define.format
 local color = log_define.color
-local log_service_name = log_define.service_name
 local string_match = string.match
 
 local log_root = skynet.getenv("log_root")
@@ -77,7 +76,7 @@ function CMD.log(level, msg)
         if is_master then
             CMD.console(level, msg)
         else
-            skynet.call(log_service_name(), "lua", "console", level, msg)
+            skynet.call(".logger", "lua", "console", level, msg)
         end
     end
 end
@@ -155,6 +154,7 @@ if is_master then
     }
 
     category_addr[DEFAULT_CATEGORY] = skynet.self()
+    skynet.register(".logger")
 end
 
 
@@ -165,5 +165,4 @@ skynet.dispatch("lua", function(_, _, cmd, ...)
 end)
 
 open_file()
-skynet.register(log_service_name(category))
 skynet.start(function() end)
