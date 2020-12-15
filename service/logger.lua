@@ -130,7 +130,7 @@ if is_master then
         id = skynet.PTYPE_TEXT,
         unpack = skynet.tostring,
         dispatch = function(_, addr, msg)
-            local level = LOG_LEVEL.DEBUG
+            local level = LOG_LEVEL.INFO
             if string_match(msg, "maybe in an endless loop") then
                 level = LOG_LEVEL.WARN
             end
@@ -157,12 +157,12 @@ if is_master then
     skynet.register(".logger")
 end
 
-
-skynet.dispatch("lua", function(_, _, cmd, ...)
-    local f = CMD[cmd]
-    assert(f, cmd)
-    return skynet.retpack(f(...))
-end)
-
 open_file()
-skynet.start(function() end)
+
+skynet.start(function()
+    skynet.dispatch("lua", function(_, _, cmd, ...)
+        local f = CMD[cmd]
+        assert(f, cmd)
+        return skynet.retpack(f(...))
+    end)
+end)

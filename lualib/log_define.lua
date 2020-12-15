@@ -71,8 +71,8 @@ function M.format(addr, level, di, ...)
         param[k] = tostring(v)
     end
 
-    local msg = string_format("[:%08x][%s][%s]%s %s",
-        addr, M.LOG_LEVEL_NAME[level], time, fileline, tconcat(param," "))
+    local msg = string_format("[:%08x][%s][%s] %s %s",
+        addr, M.LOG_LEVEL_NAME[level], time, tconcat(param," "), fileline)
 
     return msg
 end
